@@ -2,6 +2,7 @@ package metrics
 
 import "sync"
 
+// NewRegistry one of Registry
 func NewRegistry(dummy bool) *Registry {
 	var initCounterFunc func(string) Counter
 
@@ -19,6 +20,7 @@ func NewRegistry(dummy bool) *Registry {
 	}
 }
 
+// Registry stores Counters set
 type Registry struct {
 	lock            sync.Mutex
 	InitCounterFunc func(string) Counter
@@ -27,6 +29,7 @@ type Registry struct {
 	dummy bool
 }
 
+// AddCounter inits new Counter by name and adds it no Registry
 func (r *Registry) AddCounter(name string) {
 	r.lock.Lock()
 	defer r.lock.Unlock()
@@ -35,6 +38,7 @@ func (r *Registry) AddCounter(name string) {
 	return
 }
 
+// Stats returns all counters `name: values` map
 func (r *Registry) Stats() map[string]int64 {
 	m := make(map[string]int64)
 

@@ -14,19 +14,8 @@ import (
 	"github.com/mullakhmetov/status-board/internal/sites"
 )
 
-type Service interface {
-	Run(ctx context.Context)
-	CheckAll(ctx context.Context) error
-
-	Get(ctx context.Context, name string) (Response, error)
-	GetMin(ctx context.Context) (Response, error)
-	GetMax(ctx context.Context) (Response, error)
-	GetRandom(ctx context.Context) (Response, error)
-
-	Close()
-}
-
-func NewAsker(s sites.Service, metricsRegistry *metrics.Registry, timeout time.Duration, rate time.Duration) Service {
+// NewHttpAsker returns asker for http services
+func NewHttpAsker(s sites.Service, metricsRegistry *metrics.Registry, timeout time.Duration, rate time.Duration) Service {
 	transport := &http.Transport{
 		DialContext: (&net.Dialer{
 			Timeout: timeout,
@@ -39,7 +28,7 @@ func NewAsker(s sites.Service, metricsRegistry *metrics.Registry, timeout time.D
 		metricsRegistry.AddCounter(site.Name)
 	}
 
-	return &asker{
+	return &httpAsker{
 		SitesService:    s,
 		MetricsRegistry: metricsRegistry,
 		httpClient:      client,
@@ -47,14 +36,15 @@ func NewAsker(s sites.Service, metricsRegistry *metrics.Registry, timeout time.D
 	}
 }
 
-type asker struct {
+type httpAsker struct {
 	SitesService    sites.Service
 	MetricsRegistry *metrics.Registry
 	httpClient      http.Client
 	rate            time.Duration
 }
 
-func (a *asker) Run(ctx context.Context) {
+// Run starts infitite loop that periodically checks all resources availability
+func (a *httpAsker) Run(ctx context.Context) {
 	a.CheckAll(ctx)
 
 	ticker := time.NewTicker(a.rate)
@@ -70,7 +60,8 @@ func (a *asker) Run(ctx context.Context) {
 	}()
 }
 
-func (a *asker) CheckAll(ctx context.Context) error {
+// CheckAll checks all resources availability. Blocks until all resources is checked
+func (a *httpAsker) CheckAll(ctx context.Context) error {
 	var wg sync.WaitGroup
 
 	for _, site := range a.SitesService.GetAll() {
@@ -88,7 +79,8 @@ func (a *asker) CheckAll(ctx context.Context) error {
 
 }
 
-func (a *asker) Get(ctx context.Context, name string) (r Response, err error) {
+// Get returns resource status by it's name
+func (a *httpAsker) Get(ctx context.Context, name string) (r Response, err error) {
 	for _, site := range a.SitesService.GetAll() {
 		if site.Name == name {
 			a.MetricsRegistry.Counters[site.Name].Inc()
@@ -99,7 +91,8 @@ func (a *asker) Get(ctx context.Context, name string) (r Response, err error) {
 	return r, &NotFoundError{name}
 }
 
-func (a *asker) GetMin(ctx context.Context) (r Response, err error) {
+// GetMin returns available resource with minimum latency
+func (a *httpAsker) GetMin(ctx context.Context) (r Response, err error) {
 	sorted := a.SitesService.GetSortedByLatency()
 	if len(sorted) == 0 {
 		return r, &NoResponse{}
@@ -111,7 +104,8 @@ func (a *asker) GetMin(ctx context.Context) (r Response, err error) {
 	return Response{Name: min.Name, Alive: true, Latency: min.Latency}, nil
 }
 
-func (a *asker) GetMax(ctx context.Context) (r Response, err error) {
+// GetMax returns available resource with maximum latency
+func (a *httpAsker) GetMax(ctx context.Context) (r Response, err error) {
 	sorted := a.SitesService.GetSortedByLatency()
 	if len(sorted) == 0 {
 		return r, &NoResponse{}
@@ -124,7 +118,8 @@ func (a *asker) GetMax(ctx context.Context) (r Response, err error) {
 	return Response{Name: max.Name, Alive: true, Latency: max.Latency}, nil
 }
 
-func (a *asker) GetRandom(ctx context.Context) (r Response, err error) {
+// GetRandom returns random available resource status response
+func (a *httpAsker) GetRandom(ctx context.Context) (r Response, err error) {
 	sites := a.SitesService.GetAll()
 	if len(sites) == 0 {
 		return r, &NoResponse{}
@@ -140,10 +135,9 @@ func (a *asker) GetRandom(ctx context.Context) (r Response, err error) {
 }
 
 // nothing to finalize
-func (a *asker) Close() {}
+func (a *httpAsker) Close() {}
 
-// returns nil if site is available
-func (a *asker) checkSite(ctx context.Context, site *sites.Site, wg *sync.WaitGroup) {
+func (a *httpAsker) checkSite(ctx context.Context, site *sites.Site, wg *sync.WaitGroup) {
 	defer wg.Done()
 
 	req, err := http.NewRequestWithContext(ctx, "GET", site.Url.String(), nil)

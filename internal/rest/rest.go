@@ -41,7 +41,7 @@ func NewServer(opts ServerOpts) (*server, error) {
 	metricsRegistry := metrics.NewRegistry(!opts.StoreMetrics)
 	metrics.RegisterHandlers(router, metricsRegistry)
 
-	askerService := asker.NewAsker(sitesServices, metricsRegistry, opts.Timeout, opts.ChecksRate)
+	askerService := asker.NewHttpAsker(sitesServices, metricsRegistry, opts.Timeout, opts.ChecksRate)
 	asker.RegisterHandlers(router, askerService)
 
 	srv := &http.Server{

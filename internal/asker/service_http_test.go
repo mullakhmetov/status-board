@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAsker_NewAsker(t *testing.T) {
+func TestAsker_NewHttpAsker(t *testing.T) {
 	ss := []*sites.Site{
 		&sites.Site{Name: "google.com"},
 		&sites.Site{Name: "vk.com"},
@@ -30,7 +30,7 @@ func TestAsker_NewAsker(t *testing.T) {
 		Counters: make(map[string]metrics.Counter),
 	}
 
-	_ = NewAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
+	_ = NewHttpAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
 	assert.Equal(t, len(ss), len(mockedMetrics.Counters))
 	mockedSites.AssertExpectations(t)
 }
@@ -67,7 +67,7 @@ func TestAsker_Run(t *testing.T) {
 		Counters: make(map[string]metrics.Counter),
 	}
 
-	a := NewAsker(mockedSites, &mockedMetrics, time.Second, time.Millisecond)
+	a := NewHttpAsker(mockedSites, &mockedMetrics, time.Second, time.Millisecond)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	a.Run(ctx)
@@ -110,7 +110,7 @@ func TestAsker_Run_Cancel(t *testing.T) {
 		Counters: make(map[string]metrics.Counter),
 	}
 
-	a := NewAsker(mockedSites, &mockedMetrics, time.Second, time.Millisecond)
+	a := NewHttpAsker(mockedSites, &mockedMetrics, time.Second, time.Millisecond)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	cancel()
 	a.Run(ctx)
@@ -153,7 +153,7 @@ func TestAsker_CheckAll(t *testing.T) {
 		Counters: make(map[string]metrics.Counter),
 	}
 
-	a := NewAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
+	a := NewHttpAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
@@ -197,7 +197,7 @@ func TestAsker_Get(t *testing.T) {
 		Counters: make(map[string]metrics.Counter),
 	}
 
-	a := NewAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
+	a := NewHttpAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	a.CheckAll(ctx)
@@ -235,7 +235,7 @@ func TestAsker_CheckUnreachable(t *testing.T) {
 		Counters: make(map[string]metrics.Counter),
 	}
 
-	a := NewAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
+	a := NewHttpAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	a.CheckAll(ctx)
@@ -285,7 +285,7 @@ func TestAsker_GetMin_GetMax_GetRandom(t *testing.T) {
 		Counters: make(map[string]metrics.Counter),
 	}
 
-	a := NewAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
+	a := NewHttpAsker(mockedSites, &mockedMetrics, time.Second, time.Second)
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	a.CheckAll(ctx)
