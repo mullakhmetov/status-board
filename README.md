@@ -7,7 +7,7 @@
 `./status-board --help`
 
 ### run
-`/status-board --port=8080 --sites_path=/path/to/sites.txt --metrics --timeout=5 --check_rate=60`
+`./status-board --port=8080 --sites_path=/path/to/sites.txt --metrics --timeout=5 --check_rate=60`
 
 ## Check status
 ```
